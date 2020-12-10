@@ -1,5 +1,5 @@
 
-package com.example.example1.dto;
+package com.example.openMaps.dto;
 
 import java.util.HashMap;
 import java.util.List;

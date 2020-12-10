@@ -1,3 +1,4 @@
+package com.example.openMaps.config;
 //package com.example.example1;
 //
 //import org.springframework.context.annotation.Configuration;
