@@ -11,6 +11,29 @@ management.endpoints.web.base-path=/monitoring
 management.server.port=8070
 ----
 After deployment with these changes, we can see the same output on http://localhost:8070/monitoring/ URL.
+[source,json]
+----
+{
+    "_links": {
+        "self": {
+            "href": "http://localhost:8070/monitoring",
+            "templated": false
+        },
+        "health": {
+            "href": "http://localhost:8070/monitoring/health",
+            "templated": false
+        },
+        "health-path": {
+            "href": "http://localhost:8070/monitoring/health/{*path}",
+            "templated": true
+        },
+        "info": {
+            "href": "http://localhost:8070/monitoring/info",
+            "templated": false
+        }
+    }
+}
+----
 
 = Expose Endpoints
 With the default configuration, we can access only four endpoints, but the Spring Actuator has more endpoints like metrics, HTTP trace, audit events, etc. If we want to access such endpoints we need to configure them. Spring boot actuator provides some configuration to include and exclude endpoints from the user. Here is an example of the application.properties file.
@@ -23,6 +46,75 @@ management.endpoints.jmx.exposure.include=*
 management.endpoints.jmx.exposure.exclude=health, metrics
 management.endpoints.web.exposure.include=*
 management.endpoints.web.exposure.exclude=health, metrics
+----
+redeploy the application and hit with URL http://localhost:8070/monitoring/ we will get the following output.
+
+[source,json]
+----
+{
+    "_links": {
+        "self": {
+            "href": "http://localhost:8070/monitoring",
+            "templated": false
+        },
+        "beans": {
+            "href": "http://localhost:8070/monitoring/beans",
+            "templated": false
+        },
+        "caches-cache": {
+            "href": "http://localhost:8070/monitoring/caches/{cache}",
+            "templated": true
+        },
+        "caches": {
+            "href": "http://localhost:8070/monitoring/caches",
+            "templated": false
+        },
+        "info": {
+            "href": "http://localhost:8070/monitoring/info",
+            "templated": false
+        },
+        "conditions": {
+            "href": "http://localhost:8070/monitoring/conditions",
+            "templated": false
+        },
+        "configprops": {
+            "href": "http://localhost:8070/monitoring/configprops",
+            "templated": false
+        },
+        "env": {
+            "href": "http://localhost:8070/monitoring/env",
+            "templated": false
+        },
+        "env-toMatch": {
+            "href": "http://localhost:8070/monitoring/env/{toMatch}",
+            "templated": true
+        },
+        "loggers": {
+            "href": "http://localhost:8070/monitoring/loggers",
+            "templated": false
+        },
+        "loggers-name": {
+            "href": "http://localhost:8070/monitoring/loggers/{name}",
+            "templated": true
+        },
+        "heapdump": {
+            "href": "http://localhost:8070/monitoring/heapdump",
+            "templated": false
+        },
+        "threaddump": {
+            "href": "http://localhost:8070/monitoring/threaddump",
+            "templated": false
+        },
+        "scheduledtasks": {
+            "href": "http://localhost:8070/monitoring/scheduledtasks",
+            "templated": false
+        },
+        "mappings": {
+            "href": "http://localhost:8070/monitoring/mappings",
+            "templated": false
+        }
+    }
+}
 ----
 
 = Add Custom Endpoints
@@ -61,6 +153,78 @@ public class ServerInfoActuatorEndpoint {
             if(dot != -1) { version = version.substring(0, dot); }
         } return Integer.parseInt(version);
     }
+----
+redeploy the application and hit with URL http://localhost:8070/monitoring/ we will get the following output.
+[source,json]
+----
+{
+    "_links": {
+        "self": {
+            "href": "http://localhost:8070/monitoring",
+            "templated": false
+        },
+        "server-info": {
+            "href": "http://localhost:8070/monitoring/server-info",
+            "templated": false
+        },
+        "beans": {
+            "href": "http://localhost:8070/monitoring/beans",
+            "templated": false
+        },
+        "caches-cache": {
+            "href": "http://localhost:8070/monitoring/caches/{cache}",
+            "templated": true
+        },
+        "caches": {
+            "href": "http://localhost:8070/monitoring/caches",
+            "templated": false
+        },
+        "info": {
+            "href": "http://localhost:8070/monitoring/info",
+            "templated": false
+        },
+        "conditions": {
+            "href": "http://localhost:8070/monitoring/conditions",
+            "templated": false
+        },
+        "configprops": {
+            "href": "http://localhost:8070/monitoring/configprops",
+            "templated": false
+        },
+        "env": {
+            "href": "http://localhost:8070/monitoring/env",
+            "templated": false
+        },
+        "env-toMatch": {
+            "href": "http://localhost:8070/monitoring/env/{toMatch}",
+            "templated": true
+        },
+        "loggers": {
+            "href": "http://localhost:8070/monitoring/loggers",
+            "templated": false
+        },
+        "loggers-name": {
+            "href": "http://localhost:8070/monitoring/loggers/{name}",
+            "templated": true
+        },
+        "heapdump": {
+            "href": "http://localhost:8070/monitoring/heapdump",
+            "templated": false
+        },
+        "threaddump": {
+            "href": "http://localhost:8070/monitoring/threaddump",
+            "templated": false
+        },
+        "scheduledtasks": {
+            "href": "http://localhost:8070/monitoring/scheduledtasks",
+            "templated": false
+        },
+        "mappings": {
+            "href": "http://localhost:8070/monitoring/mappings",
+            "templated": false
+        }
+    }
+}
 ----
 
 Spring Boot Actuator provides some annotation by which we just configured our system.  
@@ -144,5 +308,39 @@ public class CustomInfoContributor implements InfoContributor {
 		builder.withDetail("customInfo", "This is custom info indicator. You can add your application data. "
 				+ "You can share application persistent data from here");
 	}
+}
+----
+below is the final output
+[source,json]
+----
+{
+    "app": {
+        "name": "Spring Boot actuator Test Application",
+        "description": "Sample application for article",
+        "version": "1.0.0"
+    },
+    "git": {
+        "commit": {
+            "time": "2020-12-11T10:54:02Z",
+            "id": "xxxxxxx"
+        },
+        "branch": "main"
+    },
+    "build": {
+        "name": "spring-boot-actuator",
+        "time": "2020-12-21T10:56:11.547Z",
+        "java": {
+            "target": "1.8",
+            "source": "1.8"
+        },
+        "encoding": {
+            "source": "UTF-8",
+            "reporting": "UTF-8"
+        },
+        "version": "0.0.1-SNAPSHOT",
+        "group": "com.example",
+        "artifact": "spring-boot-actuator"
+    },
+    "customInfo": "This is custom info indicator. You can add your application data. You can share application persistent data from here"
 }
 ----
