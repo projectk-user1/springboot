@@ -1,0 +1,148 @@
+= Spring Actuator - Basic Example
+
+This guides shows a core example of using Spring Actuator. 
+
+Start with a very simple example
+The Spring Boot Actuator module provides the facility to change the management port and path by adding some property in application.properties file.
+
+[source,properties]
+----
+management.endpoints.web.base-path=/monitoring
+management.server.port=8070
+----
+After deployment with these changes, we can see the same output on http://localhost:8070/monitoring/ URL.
+
+= Expose Endpoints
+With the default configuration, we can access only four endpoints, but the Spring Actuator has more endpoints like metrics, HTTP trace, audit events, etc. If we want to access such endpoints we need to configure them. Spring boot actuator provides some configuration to include and exclude endpoints from the user. Here is an example of the application.properties file.
+
+[source,properties]
+----
+management.endpoints.web.base-path=/custom-path
+management.server.port=8070
+management.endpoints.jmx.exposure.include=*
+management.endpoints.jmx.exposure.exclude=health, metrics
+management.endpoints.web.exposure.include=*
+management.endpoints.web.exposure.exclude=health, metrics
+----
+
+= Add Custom Endpoints
+Spring Boot Actuator provides the facility to write custom endpoints from where we can see our own customized application data. For example, I am using a custom endpoint to check my server address,  server deployed in which OS, MAC address of the server and which java version installed in the server machine
+[source,java]
+----
+@Component
+@Endpoint(id = "server-info")
+public class ServerInfoActuatorEndpoint {
+    @ReadOperation
+    public List<String> getServerInfo() {
+        List<String> serverInfo = new ArrayList<String>();
+        try {
+            serverInfo.add("Server IP Address : " + InetAddress.getLocalHost().getHostAddress());
+            serverInfo.add("Host Name: " + InetAddress.getLocalHost().getHostName());
+            serverInfo.add("Server OS : " + System.getProperty("os.name").toLowerCase());
+            NetworkInterface network = NetworkInterface.getByInetAddress(InetAddress.getLocalHost());
+            byte[] mac = network.getHardwareAddress();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < mac.length; i++) {
+                sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
+            }
+            serverInfo.add("Hardware Address : "+ sb.toString());
+            serverInfo.add("Java Version : "+getJavaVersion());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return serverInfo;
+    }
+    private int getJavaVersion() {
+        String version = System.getProperty("java.version");
+        if(version.startsWith("1.")) {
+            version = version.substring(2, 3);
+        } else {
+            int dot = version.indexOf(".");
+            if(dot != -1) { version = version.substring(0, dot); }
+        } return Integer.parseInt(version);
+    }
+----
+
+Spring Boot Actuator provides some annotation by which we just configured our system.  
+@Endpoint annotation enabled it as an endpoint and annotations  @WriteOperation ,  @ReadOperation ,  @DeleteOperation to perform like POST, GET, DELETE operations in HTTP verbs. Here we just used the  @ReadOperation  annotation. So if we now redeploy the application and hit with URL http://localhost:8070/monitoring/server-info, we will get the following output.
+
+[source,json]
+----
+[
+"Server IP Address : 192.168.0.177",
+ "Host Name: XXXXXX ",
+ "Server OS : Windows 10",
+ "Hardware Address : XX-XX-XX-XX-XX-XX",
+  "Java Version : 8"
+]
+----
+
+# More About /info Endpoint
+With the  /info  endpoint we want to get basic information about the application. For example, we can define static properties about the application by defining them to application.properties file.
+
+[source, properties]
+----
+info.app.name=Spring Boot actuator Test Application
+info.app.description=Sample application 
+info.app.version=1.0.0
+
+----
+After this change, we can re deploy the application and hit with url http://localhost:8070/monitoring/info URL. We should get the following output
+[source, json]
+----
+{
+	"app":{
+		"name":"Spring Boot actuator Test Application",
+		"description":"Sample application",
+		"version":1.0.0
+	}
+}
+----
+
+We can add other information like build info, git info of application. for that, we have to add below lines of code to pom.xml file.
+For build info, we have to add 
+[source,xml]
+----
+<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>build-info</goal>
+						</goals>
+						<configuration>
+							<additionalProperties>
+								<encoding.source>UTF-8</encoding.source>
+								<encoding.reporting>UTF-8</encoding.reporting>
+								<java.source>${maven.compiler.source}</java.source>
+								<java.target>${maven.compiler.target}</java.target>
+							</additionalProperties>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>pl.project13.maven</groupId>
+				<artifactId>git-commit-id-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+----
+
+We can see the custom information of the application by using the  InfoContributor  interface. We will create  CustomInfoContributor.java by implementing InfoIndicator.
+
+[source, java]
+----
+@Component
+public class CustomInfoContributor implements InfoContributor {
+	@Override
+	public void contribute(Info.Builder builder) {
+		builder.withDetail("customInfo", "This is custom info indicator. You can add your application data. "
+				+ "You can share application persistent data from here");
+	}
+}
+----
